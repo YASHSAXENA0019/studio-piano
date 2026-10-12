@@ -13,7 +13,7 @@ npm test       # music-theory checks
 **Piano samples** in `public/sounds/piano/` are from the
 [Salamander Grand Piano V3](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm,
 licensed under [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/) (MP3 cut via
-[Tone.js](https://tonejs.github.io/audio/salamander/)). They are not covered by this project's code licence;
+[Tone.js](https://tonejs.github.io/audio/salamander/)). They are not covered by this project's MIT licence (see `LICENSE`);
 if you reuse them, keep the attribution. See `public/sounds/piano/CREDITS.txt`.
 
 **Fonts:** [Geist](https://vercel.com/font) (SIL Open Font License).
