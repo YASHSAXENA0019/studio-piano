@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+import { family, chordName, voicing, noteNames, noteName, bassNotes, freq } from "./theory.mjs";
+
+assert.deepEqual(family(0).map(chordName), ["C", "Dm", "Em", "F", "G", "Am", "B°"]);
+assert.deepEqual(family(7).map(chordName), ["G", "Am", "Bm", "C", "D", "Em", "F♯°"]);
+assert.deepEqual(voicing({ root: 0, type: "maj" }, 4), [60, 64, 67]);
+assert.deepEqual(voicing({ root: 0, type: "maj" }, 1), [24, 31]);
+assert.deepEqual(voicing({ root: 11, type: "dim" }, 2), [47, 53, 59]);
+assert.deepEqual(voicing({ root: 7, type: "7" }, 8), [115, 119, 122, 125]);
+assert.deepEqual(noteNames({ root: 4, type: "7" }, 6), ["E6", "G♯6", "B6", "D7"]);
+assert.deepEqual(family(6).map(chordName), ["F♯", "G♯m", "A♯m", "B", "C♯", "D♯m", "F°"]);
+assert.deepEqual(family(3).map(chordName), ["D♯", "Fm", "Gm", "G♯", "A♯", "Cm", "D°"]);
+assert.deepEqual(noteNames({ root: 11, type: "maj" }, 3), ["B3", "D♯4", "F♯4"]);
+assert.deepEqual(noteNames({ root: 0, type: "aug" }, 4), ["C4", "E4", "G♯4"]);
+assert.equal(freq(69), 440);
+assert.deepEqual(family(9, "minor").map(chordName), ["Am", "B°", "C", "Dm", "Em", "F", "G"]);
+assert.deepEqual(family(8, "minor").map(chordName), ["G♯m", "A♯°", "B", "C♯m", "D♯m", "E", "F♯"]);
+assert.deepEqual(family(10, "minor").map(chordName), ["A♯m", "C°", "C♯", "D♯m", "Fm", "F♯", "G♯"]);
+assert.deepEqual(bassNotes({ root: 0, type: "maj" }, 4, "octave").map(noteName), ["C2", "C3"]);
+assert.deepEqual(bassNotes({ root: 7, type: "maj" }, 5, "fifth").map(noteName), ["G3", "D4", "G4"]);
+assert.deepEqual(bassNotes({ root: 11, type: "dim" }, 4, "fifth").map(noteName), ["B2", "F3", "B3"]);
+assert.deepEqual(bassNotes({ root: 0, type: "maj" }, 2, "fifth"), []);
+assert.deepEqual(bassNotes({ root: 0, type: "maj" }, 4, "off"), []);
+console.log("theory ok");

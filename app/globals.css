@@ -1,0 +1,155 @@
+:root { --bg: #0a0a0a; --fg: #ededed; --muted: #8b8b8b; --line: rgba(255, 255, 255, .12); color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-geist-sans), system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radius: 6px; }
+
+.lp-page { position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.lp-page canvas { position: absolute; inset: 0; }
+
+
+/* the control strip: a matte panel like the instruments' own, small-caps labels, LED dots on active options */
+.lp-bar {
+  position: fixed; z-index: 2; bottom: 16px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px);
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px; padding: 9px 14px;
+  background: rgba(18, 18, 19, .86); border: 1px solid rgba(255, 255, 255, .07); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font-size: 12px; color: #8d8d8d; white-space: nowrap;
+}
+.lp-group { display: flex; align-items: center; gap: 8px; }
+.lp-group > span { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #6f6f6f; }
+.lp-mode { display: flex; gap: 4px; }
+.lp-mode button, .lp-bar select {
+  font: inherit; color: #a3a3a3; background: #1d1d1f; border: 1px solid rgba(255, 255, 255, .06); border-radius: 7px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 1px 2px rgba(0, 0, 0, .5); cursor: pointer;
+}
+.lp-mode button { position: relative; padding: 6px 11px 6px 23px; }
+.lp-mode button::before { content: ""; position: absolute; left: 10px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: #3b3b3d; }
+.lp-mode button[aria-pressed="true"] { color: #f1f1f1; background: #242426; }
+.lp-mode button[aria-pressed="true"]::before { background: #f4f4f4; box-shadow: 0 0 6px rgba(255, 255, 255, .6); }
+.lp-mode button:not([aria-pressed]) { padding: 6px 11px; }
+.lp-mode button:not([aria-pressed])::before { display: none; }
+.lp-mode button:hover, .lp-bar select:hover { color: #f1f1f1; }
+.lp-mode button:active { transform: translateY(1px); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .6); }
+.lp-bar select { padding: 6px 10px; }
+.credit { position: fixed; z-index: 2; right: 14px; top: 12px; font-size: 11px; color: rgba(255, 255, 255, .45); text-decoration: none; }
+.credit:hover { color: var(--muted); }
+.lp-count { align-self: center; padding: 0 6px; color: #f1f1f1; min-width: 44px; text-align: center; }
+
+/* ---------------------------------------------------------------- version switch (both versions, top left) */
+.vswitch { position: fixed; z-index: 5; top: 12px; left: 14px; display: flex; padding: 3px; gap: 2px; background: rgba(20, 20, 21, .9); border: 1px solid rgba(255, 255, 255, .08); border-radius: 9px; }
+.vswitch button { font: 600 11px/1 var(--font-geist-mono), ui-monospace, monospace; letter-spacing: .06em; color: #7d7d7d; background: none; border: 0; border-radius: 6px; padding: 6px 9px; cursor: pointer; }
+.vswitch button:hover { color: #e6e6e6; }
+.vswitch button[aria-pressed="true"] { color: #f1f1f1; background: #2a2a2c; }
+
+/* ---------------------------------------------------------------- V2: hybrid workstation */
+.ws {
+  --ws-bg: #111112; --ws-panel: #18181a; --ws-raise: #212124; --ws-sunk: #0c0c0d; --ws-line: rgba(255, 255, 255, .07); --ws-line-2: rgba(255, 255, 255, .12);
+  --ws-text: #ece8e1; --ws-muted: #8c8983; --ws-dim: #5a5854; --ws-red: #e5484d; --mono: var(--font-geist-mono), ui-monospace, monospace;
+  position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--ws-bg); color: var(--ws-text);
+  user-select: none; -webkit-user-select: none;
+}
+.ws-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 52px; padding: 0 20px 0 112px; }
+.ws-mark { font: 600 12px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ws-muted); }
+.ws-credit { font-size: 11px; color: var(--ws-dim); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-credit:hover { color: var(--ws-muted); }
+.ws-stage { position: relative; flex: 1 1 auto; min-height: 220px; touch-action: none; }
+.ws-stage canvas { position: absolute; inset: 0; }
+/* the floor fades into the page where the stage meets the console, so there's no seam */
+.ws-stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 80px; pointer-events: none; background: linear-gradient(transparent, var(--ws-bg)); }
+
+/* the console: one graphite plate under the piano, controls on top, readout and pads below */
+.ws-console {
+  flex: none; width: min(1180px, calc(100% - 32px)); margin: 0 auto 16px; padding: 14px 16px 12px;
+  background: var(--ws-panel); border: 1px solid var(--ws-line); border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 20px 50px rgba(0, 0, 0, .35);
+}
+.ws-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 22px; padding-bottom: 12px; border-bottom: 1px solid var(--ws-line); }
+.ws-group { display: flex; flex-direction: column; gap: 6px; }
+.ws-label { font: 600 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ws-dim); }
+.ws-seg, .ws-step, .ws-selects { display: flex; gap: 2px; padding: 2px; background: var(--ws-sunk); border: 1px solid var(--ws-line); border-radius: 9px; }
+.ws-seg button, .ws-step button, .ws-selects select {
+  font: 500 12px/1 inherit; font-family: inherit; color: var(--ws-muted); background: none; border: 0; border-radius: 7px; padding: 8px 11px; cursor: pointer;
+  transition: color .12s, background-color .12s;
+}
+.ws-seg button:hover, .ws-step button:hover, .ws-selects select:hover { color: var(--ws-text); }
+.ws-seg button[aria-pressed="true"] { color: var(--ws-text); background: var(--ws-raise); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .5); }
+.ws-step button { padding: 8px 10px; font-size: 14px; }
+.ws-step button:active, .ws-seg button:active { background: #2a2a2d; }
+.ws-step output { min-width: 52px; align-self: center; text-align: center; font: 500 12px var(--mono); color: var(--ws-text); }
+.ws-selects select { appearance: none; -webkit-appearance: none; padding-right: 12px; }
+.ws-selects option { background: #1b1b1d; color: var(--ws-text); }
+
+.ws-body { display: grid; grid-template-columns: 240px 1fr; gap: 14px; padding-top: 14px; }
+.ws-display { display: flex; flex-direction: column; justify-content: space-between; min-height: 128px; padding: 12px 14px; background: var(--ws-sunk); border: 1px solid var(--ws-line); border-radius: 12px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, .5); }
+.ws-display-top { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 500 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ws-dim); }
+.ws-display-top span:first-child { color: var(--ws-muted); }
+.ws-now { display: flex; align-items: baseline; gap: 10px; }
+.ws-now b { font-size: 44px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; }
+.ws-now span { font: 500 13px var(--mono); color: var(--ws-muted); }
+.ws-notes { min-height: 15px; font: 500 11px var(--mono); color: var(--ws-muted); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+
+/* chord pads: a face that plays the middle octave, and four octave keys under it */
+.ws-pads { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+.ws-pad { display: flex; flex-direction: column; gap: 4px; padding: 4px; background: var(--ws-sunk); border: 1px solid var(--ws-line); border-radius: 12px; transition: border-color .15s; }
+.ws-pad[data-on] { border-color: rgba(229, 72, 77, .55); }
+.ws-pad button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: none; }
+.ws-pad-face {
+  flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; min-height: 76px; padding: 10px 10px 8px;
+  background: var(--ws-raise); border-radius: 8px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 2px 0 #09090a; transition: transform .06s, box-shadow .06s, background-color .15s;
+}
+.ws-pad-face b { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.ws-pad-face span { font: 500 11px var(--mono); color: var(--ws-dim); }
+.ws-pad-face:hover { background: #26262a; }
+.ws-pad[data-on] .ws-pad-face { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 0 0 #09090a; background: #262629; }
+.ws-pad[data-on] .ws-pad-face span { color: var(--ws-red); }
+.ws-octs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+.ws-octs button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 0 4px; background: none; border-radius: 6px; }
+.ws-octs button:hover { background: #19191b; }
+.ws-octs kbd { font: 600 11px var(--mono); color: var(--ws-muted); }
+.ws-octs small { position: relative; font: 500 9px var(--mono); color: var(--ws-dim); padding-top: 7px; }
+.ws-octs small::before { content: ""; position: absolute; top: 0; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: #2c2c2f; }
+.ws-octs button[data-on] kbd { color: var(--ws-text); }
+.ws-octs button[data-on] small::before { background: var(--ws-red); box-shadow: 0 0 6px rgba(229, 72, 77, .7); }
+
+/* piano mode: the 88 as a strip with the playable window, and the pedal */
+.ws-piano { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: stretch; }
+.ws-range { display: flex; gap: 1px; padding: 10px 10px 22px; background: var(--ws-sunk); border: 1px solid var(--ws-line); border-radius: 12px; }
+.ws-range button { position: relative; flex: 1; min-width: 0; height: 100%; min-height: 70px; background: #2a2926; border: 0; border-radius: 0 0 3px 3px; cursor: pointer; transition: background-color .15s; }
+.ws-range button[data-in] { background: var(--ws-text); }
+.ws-range button:hover { background: #4a4844; }
+.ws-range button[data-in]:hover { background: #fff; }
+.ws-range small { position: absolute; left: 0; top: calc(100% + 5px); font: 500 9px var(--mono); color: var(--ws-dim); }
+.ws-pedal {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 128px; padding: 12px 18px;
+  font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ws-muted);
+  background: var(--ws-raise); border: 1px solid var(--ws-line); border-radius: 12px; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 2px 0 #09090a;
+}
+.ws-pedal i { width: 8px; height: 8px; border-radius: 50%; background: #2c2c2f; }
+.ws-pedal kbd { font: 500 10px var(--mono); letter-spacing: 0; text-transform: none; color: var(--ws-dim); }
+.ws-pedal[aria-pressed="true"] { color: var(--ws-text); transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
+.ws-pedal[aria-pressed="true"] i { background: var(--ws-red); box-shadow: 0 0 8px rgba(229, 72, 77, .8); }
+
+.ws-hints { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; font-size: 11px; color: var(--ws-dim); }
+.ws-hints kbd { font: 500 10px var(--mono); color: var(--ws-muted); padding: 2px 5px; border: 1px solid var(--ws-line); border-radius: 4px; }
+.ws-hints i { width: 3px; height: 3px; margin: 0 4px; border-radius: 50%; background: #333; }
+
+@media (max-width: 860px) {
+  .ws-body { grid-template-columns: 1fr; }
+  .ws-display { min-height: 0; gap: 8px; }
+  .ws-now b { font-size: 34px; }
+  .ws-pads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ws-piano { grid-template-columns: 1fr; }
+  .ws-pedal { flex-direction: row; }
+  .ws-hints { display: none; }   /* no hardware keyboard to hint at on a phone; the controls say it all */
+}
+@media (max-width: 560px) {
+  .ws-top { padding-right: 14px; }
+  .ws-mark { display: none; }
+  .ws-credit { font-size: 10px; }
+  .ws-console { width: calc(100% - 16px); margin-bottom: 8px; padding: 10px; max-height: 62dvh; overflow-y: auto; }
+  .ws-bar { gap: 8px 12px; }
+  .ws-seg button, .ws-selects select { padding: 8px 9px; }
+  .ws-pad-face { min-height: 58px; padding: 8px; }
+  .ws-pad-face b { font-size: 17px; }
+}
